@@ -24,6 +24,7 @@ dependencies {
 	apiCompile 'io.core9:module-server-api:+'
 	apiCompile 'io.core9:module-admin-api:+'
 	implCompile 'io.core9:module-git-api:+'
+	implCompile 'org.gradle:gradle-tooling-api:1.10'
 	implCompile 'io.core9:module-session-manager-api:+'
 	implCompile 'io.core9:module-server-vertx-api:+'
 	implCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.1'
