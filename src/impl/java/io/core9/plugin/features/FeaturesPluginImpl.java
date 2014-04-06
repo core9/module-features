@@ -6,8 +6,7 @@ import io.core9.plugin.server.VirtualHost;
 import io.core9.plugin.server.request.Method;
 import io.core9.plugin.server.request.Request;
 import io.core9.plugin.server.vertx.VertxServer;
-import io.core9.plugin.session.Session;
-import io.core9.plugin.session.SessionManager;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +29,8 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	@InjectPlugin
 	private VertxServer server;
 
-	@InjectPlugin
-	private SessionManager sessionManager;
+/*	@InjectPlugin
+	private SessionManager sessionManager;*/
 	
 	private Map<String,FeaturesProcessor> processors = new HashMap<String,FeaturesProcessor>();
 	private final ObjectMapper jsonMapper = new ObjectMapper();
@@ -69,9 +68,9 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	@Override
 	protected void process(Request request, String action) {
 		
-        Session session = sessionManager.getVertxSession(request, server);
+/*        Session session = sessionManager.getVertxSession(request, server);
 		//TODO encrypt git repository passwords
-		String key = (String)session.get("encryptionkey");
+		String key = (String)session.get("encryptionkey");*/
 		
 		try {
 			if(request.getMethod() == Method.POST) {
