@@ -2,11 +2,10 @@ package io.core9.plugin.features;
 
 import io.core9.plugin.admin.AbstractAdminPlugin;
 import io.core9.plugin.admin.plugins.AdminConfigRepository;
+import io.core9.plugin.server.Server;
 import io.core9.plugin.server.VirtualHost;
 import io.core9.plugin.server.request.Method;
 import io.core9.plugin.server.request.Request;
-import io.core9.plugin.server.vertx.VertxServer;
-
 
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +26,8 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	private AdminConfigRepository config;
 	
 	@InjectPlugin
-	private VertxServer server;
+	private Server server;
 
-/*	@InjectPlugin
-	private SessionManager sessionManager;*/
-	
 	private Map<String,FeaturesProcessor> processors = new HashMap<String,FeaturesProcessor>();
 	private final ObjectMapper jsonMapper = new ObjectMapper();
 
