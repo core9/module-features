@@ -70,7 +70,7 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 		
 		try {
 			if(request.getMethod() == Method.POST) {
-				Map<String,Object> body = request.getBodyAsMap();
+				Map<String,Object> body = request.getBodyAsMap().toBlocking().last();
 				switch(action) {				
 				case "apply":
 					bootstrapFeatureVersion(request.getVirtualHost(), (String) body.get("repo"), (String) body.get("feature"), (String) body.get("version"), false);

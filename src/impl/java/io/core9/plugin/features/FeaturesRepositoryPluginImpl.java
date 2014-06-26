@@ -87,7 +87,7 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 					saveFeaturesFile(new File("data/git/" + repoID), features);
 					break;
 				case PUT:
-					Map<String,Object> body = request.getBodyAsMap();
+					Map<String,Object> body = request.getBodyAsMap().toBlocking().last();
 					boolean found = false;
 					for(Map<String,Object> featureMap : features) {
 						if(featureMap.get("name").equals(body.get("name"))) {
@@ -131,7 +131,7 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 				request.getResponse().sendJsonMap(deleteFeatureVersion(repoID, featurename, version));
 				break;
 			case PUT:
-				saveFeatureVersionFile(getRepositoryFolder(repoID, featurename, version), request.getBodyAsMap());
+				saveFeatureVersionFile(getRepositoryFolder(repoID, featurename, version), request.getBodyAsMap().toBlocking().last());
 				updateFeatureVersionContents(request.getVirtualHost(), repoID, featurename, version);
 				request.getResponse().sendJsonMap(readRepositoryFeatureVersion(repoID, featurename, version));
 				break;
