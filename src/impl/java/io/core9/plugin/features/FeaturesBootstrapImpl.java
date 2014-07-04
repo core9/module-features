@@ -1,7 +1,12 @@
 package io.core9.plugin.features;
 
 import io.core9.core.boot.CoreBootStrategy;
-import io.core9.plugin.admin.plugins.AdminConfigRepository;
+import io.core9.plugin.database.repository.CrudRepository;
+import io.core9.plugin.database.repository.NoCollectionNamePresentException;
+import io.core9.plugin.database.repository.RepositoryFactory;
+import io.core9.plugin.features.entity.FeatureRepository;
+import io.core9.plugin.features.entity.PrivateFeatureRepository;
+import io.core9.plugin.features.entity.PublicFeatureRepository;
 import io.core9.plugin.git.GitRepository;
 import io.core9.plugin.git.GitRepositoryManager;
 import io.core9.plugin.server.VirtualHost;
@@ -14,6 +19,7 @@ import java.util.Map;
 
 import net.xeoh.plugins.base.Plugin;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.events.PluginLoaded;
 import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -21,13 +27,10 @@ import org.apache.commons.lang3.ClassUtils;
 @PluginImplementation
 public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesBootstrap {
 	
-	private static final String PRIVATE_CONFIG_TYPE = "featuresrepo_private";
-	private static final String PUBLIC_CONFIG_TYPE = "featuresrepo_public";
+	private CrudRepository<PublicFeatureRepository> publicRepo;
+	private CrudRepository<PrivateFeatureRepository> privateRepo;
 	
 	private VirtualHost[] vhosts;
-	
-	@InjectPlugin
-	private AdminConfigRepository config;
 	
 	@InjectPlugin
 	private GitRepositoryManager git;
@@ -39,13 +42,19 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	public void process(VirtualHost[] vhosts) {
 		this.vhosts = vhosts;
 	}
+	
+	@PluginLoaded
+	public void onRepositoryFactory(RepositoryFactory factory) throws NoCollectionNamePresentException {
+		publicRepo = factory.getRepository(PublicFeatureRepository.class);
+		privateRepo = factory.getRepository(PrivateFeatureRepository.class);
+	}
 
 	/**
 	 * Create and initialize a private repository
 	 * @param vhost
 	 */
 	private void handlePrivateRepositories(VirtualHost vhost) {
-		for(Map<String,Object> repo: config.getConfigList(vhost, PRIVATE_CONFIG_TYPE)) {
+		for(PrivateFeatureRepository repo : privateRepo.getAll(vhost)) {
 			initializeRepository(repo);
 		}
 	}
@@ -56,28 +65,28 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	 * @param providers 
 	 */
 	private void handlePublicRepositories(VirtualHost vhost, List<FeaturesProvider> providers) {
-		List<Map<String, Object>> repoList = config.getConfigList(vhost, PUBLIC_CONFIG_TYPE);
+		List<PublicFeatureRepository> repoList = publicRepo.getAll(vhost);
 		Map<FeaturesProvider, String> providersToRepositories = new HashMap<FeaturesProvider, String>();
 		for(FeaturesProvider provider : providers) {
 			boolean available = false;
-			for(Map<String,Object> repoConf : repoList) {
-				available = repoConf.get("path").equals(provider.getRepositoryPath());
+			for(PublicFeatureRepository repoConf : repoList) {
+				available = repoConf.getPath().equals(provider.getRepositoryPath());
 				if(available) {
-					providersToRepositories.put(provider, (String) repoConf.get("_id"));
+					providersToRepositories.put(provider, repoConf.getId());
 					break;
 				}
 			}
 			if(!available) {
-				Map<String,Object> newConf = new HashMap<String,Object>();
-				newConf.put("path", provider.getRepositoryPath());
-				newConf.put("user", null);
-				newConf.put("password", null);
-				Map<String,Object> repoConf = config.createConfig(vhost, PUBLIC_CONFIG_TYPE, newConf);
-				repoList.add(repoConf);
-				providersToRepositories.put(provider, (String) repoConf.get("_id"));
+				PublicFeatureRepository newConf = new PublicFeatureRepository();
+				newConf.setPath(provider.getRepositoryPath());
+				newConf.setUser(null);
+				newConf.setPassword(null);
+				publicRepo.create(vhost, newConf);
+				repoList.add(newConf);
+				providersToRepositories.put(provider, newConf.getId());
 			}
 		}
-		for(Map<String,Object> repoConf : repoList) {
+		for(PublicFeatureRepository repoConf : repoList) {
 			initializeRepository(repoConf);
 		}
 		handleFeatureProviders(vhost, providersToRepositories);
@@ -102,12 +111,12 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	 * @param repoConf
 	 * @return
 	 */
-	private GitRepository initializeRepository(Map<String,Object> repoConf) {
-		GitRepository repo = git.registerRepository((String) repoConf.get("_id"));
-		repo.setLocalPath((String) repoConf.get("_id"));
-		repo.setOrigin((String) repoConf.get("path"));
-		repo.setUsername((String) repoConf.get("user"));
-		repo.setPassword((String) repoConf.get("password"));
+	private GitRepository initializeRepository(FeatureRepository featureRepo) {
+		GitRepository repo = git.registerRepository(featureRepo.getId());
+		repo.setLocalPath(featureRepo.getId());
+		repo.setOrigin(featureRepo.getPath());
+		repo.setUsername(featureRepo.getUser());
+		repo.setPassword(featureRepo.getPassword());
 		git.init(repo);
 		return repo;
 	}

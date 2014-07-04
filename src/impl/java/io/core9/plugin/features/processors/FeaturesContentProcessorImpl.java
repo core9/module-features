@@ -1,10 +1,10 @@
 package io.core9.plugin.features.processors;
 
-import io.core9.plugin.admin.plugins.AdminConfigRepository;
-import io.core9.plugin.admin.plugins.AdminContentRepository;
+import io.core9.plugin.database.mongodb.MongoDatabase;
 import io.core9.plugin.server.VirtualHost;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -14,10 +14,7 @@ import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 public class FeaturesContentProcessorImpl implements FeaturesContentProcessor {
 	
 	@InjectPlugin
-	private AdminConfigRepository config;
-	
-	@InjectPlugin
-	private AdminContentRepository repository;
+	private MongoDatabase database;
 	
 	@Override
 	public String getFeatureNamespace() {
@@ -33,7 +30,9 @@ public class FeaturesContentProcessorImpl implements FeaturesContentProcessor {
 	public boolean updateFeatureContent(VirtualHost vhost, File repositoryPath, Map<String, Object> feature) {
 		String[] id = ((String) feature.get("id")).split("-");
 		if(id.length == 2) {
-			Map<String,Object> entry = repository.readContent(vhost, id[0], id[1]);
+			Map<String,Object> query = new HashMap<>();
+			query.put("_id", id[1]);
+			Map<String,Object> entry = database.getSingleResult(vhost.getContext("database"), vhost.getContext("prefix") + id[0], query);
 			if(entry != null) {
 				feature.put("entry", entry);
 				return true;
@@ -46,14 +45,17 @@ public class FeaturesContentProcessorImpl implements FeaturesContentProcessor {
 	public void handleFeature(VirtualHost vhost, File repository, Map<String, Object> feature) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entry = (Map<String, Object>) feature.get("entry");
-		this.repository.createContent(vhost, (String) entry.get("contenttype"), entry);
+		database.upsert(vhost.getContext("database"), (String) vhost.getContext("prefix") + entry.get("contenttype"), entry, entry);
 	}
 
 	@Override
 	public void removeFeature(VirtualHost vhost, File repository, Map<String, Object> item) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entry = (Map<String, Object>) item.get("entry");
-		this.repository.deleteContent(vhost, (String) entry.get("contenttype"), (String) entry.get("_id"));
+		Map<String,Object> query = new HashMap<>();
+		query.put("contenttype", entry.get("contenttype"));
+		query.put("_id", entry.get("_id"));
+		database.delete(vhost.getContext("database"), (String) vhost.getContext("prefix") + entry.get("contenttype"), query);
 	}
 	
 }

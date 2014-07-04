@@ -1,7 +1,10 @@
 package io.core9.plugin.features;
 
 import io.core9.plugin.admin.AbstractAdminPlugin;
-import io.core9.plugin.admin.plugins.AdminConfigRepository;
+import io.core9.plugin.database.repository.CrudRepository;
+import io.core9.plugin.database.repository.NoCollectionNamePresentException;
+import io.core9.plugin.database.repository.RepositoryFactory;
+import io.core9.plugin.features.entity.FeatureRepository;
 import io.core9.plugin.server.Server;
 import io.core9.plugin.server.VirtualHost;
 import io.core9.plugin.server.request.Method;
@@ -14,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.events.PluginLoaded;
 import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,10 +27,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesPlugin {
 	
 	@InjectPlugin
-	private AdminConfigRepository config;
-	
-	@InjectPlugin
 	private Server server;
+	
+	private CrudRepository<FeatureRepository> featuresRepos;
+	
+	@PluginLoaded
+	public void onRepositoryFactory(RepositoryFactory factory) throws NoCollectionNamePresentException {
+		featuresRepos = factory.getRepository(FeatureRepository.class);
+	}
 
 	private Map<String,FeaturesProcessor> processors = new HashMap<String,FeaturesProcessor>();
 	private final ObjectMapper jsonMapper = new ObjectMapper();
@@ -119,18 +127,18 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	 * @param version
 	 */
 	private void setFeatureVersion(VirtualHost virtualHost, String repo, String featurename, String version) {
-		Map<String,Object> repoConfig = config.readConfig(virtualHost, repo);
-		if(!repoConfig.containsKey("current")) {
-			repoConfig.put("current", new HashMap<String,String>());
+		FeatureRepository repoConfig = featuresRepos.read(virtualHost, repo);
+		Map<String,String> current = repoConfig.getCurrent();
+		if(current == null) {
+			current = new HashMap<String,String>();
+			repoConfig.setCurrent(current);
 		}
-		@SuppressWarnings("unchecked")
-		Map<String,String> current = (Map<String, String>) repoConfig.get("current");
 		if(version != null) {
 			current.put(featurename, version);
 		} else {
 			current.remove(featurename);
 		}
-		config.updateConfig(virtualHost, (String) repoConfig.get("configtype"), repo, repoConfig);
+		featuresRepos.update(virtualHost, repo, repoConfig);
 	}
 	
 	/**
@@ -141,9 +149,8 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	 * @return
 	 */
 	private String getFeatureVersion(VirtualHost vhost, String repo, String featurename) {
-		Map<String,Object> repoConfig = config.readConfig(vhost, repo);
-		@SuppressWarnings("unchecked")
-		Map<String,String> current = (Map<String, String>) repoConfig.get("current");
+		FeatureRepository repoConfig = featuresRepos.read(vhost, repo);
+		Map<String,String> current = repoConfig.getCurrent();
 		if(current != null) {
 			return current.get(featurename);
 		}

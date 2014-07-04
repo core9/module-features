@@ -1,7 +1,10 @@
 package io.core9.plugin.features;
 
 import io.core9.plugin.admin.AbstractAdminPlugin;
-import io.core9.plugin.admin.plugins.AdminConfigRepository;
+import io.core9.plugin.database.repository.CrudRepository;
+import io.core9.plugin.database.repository.NoCollectionNamePresentException;
+import io.core9.plugin.database.repository.RepositoryFactory;
+import io.core9.plugin.features.entity.FeatureRepository;
 import io.core9.plugin.git.GitRepository;
 import io.core9.plugin.git.GitRepositoryManager;
 import io.core9.plugin.server.VirtualHost;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import net.xeoh.plugins.base.annotations.events.PluginLoaded;
 import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,15 +29,19 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 @PluginImplementation
 public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements FeaturesRepositoryPlugin {
-
-	@InjectPlugin
-	private AdminConfigRepository config;
 	
 	@InjectPlugin
 	private GitRepositoryManager git;
 	
 	@InjectPlugin
 	private FeaturesPlugin features;
+	
+	private CrudRepository<FeatureRepository> featuresRepos;
+	
+	@PluginLoaded
+	public void onRepositoryFactory(RepositoryFactory factory) throws NoCollectionNamePresentException {
+		featuresRepos = factory.getRepository(FeatureRepository.class);
+	}
 	
 	private final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -282,11 +290,11 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 	private void pullRepository(VirtualHost vhost, String repoID) {
 		GitRepository repo = git.registerRepository(repoID);
 		if(!repo.exists()) {
-			Map<String,Object> repoConf = config.readConfig(vhost, repoID);
-			repo.setLocalPath((String) repoConf.get("_id"));
-			repo.setOrigin((String) repoConf.get("path"));
-			repo.setUsername((String) repoConf.get("user"));
-			repo.setPassword((String) repoConf.get("password"));
+			FeatureRepository repoConf = featuresRepos.read(vhost, repoID);
+			repo.setLocalPath((String) repoConf.getId());
+			repo.setOrigin((String) repoConf.getPath());
+			repo.setUsername((String) repoConf.getUser());
+			repo.setPassword((String) repoConf.getPassword());
 			git.init(repo);
 		} else {
 			git.pull(repo);
