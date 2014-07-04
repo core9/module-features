@@ -8,15 +8,10 @@ import io.core9.plugin.database.repository.Collection;
 @Collection("configuration")
 public class PublicFeatureRepository extends FeatureRepository {
 	
-	private static final HashMap<String, Object> defaultQuery = new HashMap<String,Object>() {
-		private static final long serialVersionUID = 7894958903345882391L;
-		{
-			defaultQuery.put("configtype", "featuresrepo_public");
-		}
-	};
-
 	@Override
 	public Map<String,Object> retrieveDefaultQuery() {
-		return defaultQuery;
+		Map<String,Object> query = new HashMap<String,Object>();
+		query.put("configtype", "featuresrepo_public");
+		return query;
 	}
 }

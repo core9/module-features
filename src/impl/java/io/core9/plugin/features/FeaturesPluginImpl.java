@@ -38,7 +38,6 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 
 	private Map<String,FeaturesProcessor> processors = new HashMap<String,FeaturesProcessor>();
 	private final ObjectMapper jsonMapper = new ObjectMapper();
-
 	
 	@Override
 	public FeaturesPlugin addFeatureProcessor(FeaturesProcessor processor) {
