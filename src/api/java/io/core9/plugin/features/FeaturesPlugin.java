@@ -29,4 +29,24 @@ public interface FeaturesPlugin extends Core9Plugin, AdminPlugin {
 	 * @throws IOException 
 	 */
 	void bootstrapFeatureVersion(VirtualHost virtualHost, String repo, String featurename, String version) throws IOException;
+
+	/**
+	 * Return the current feature version
+	 * @param vhost
+	 * @param repo
+	 * @param featurename
+	 * @return
+	 */
+	String getFeatureVersion(VirtualHost vhost, String repo, String featurename);
+
+	/**
+	 * Bootstrap a feature, check if the current feature is enabled with the check
+	 * @param vhost
+	 * @param repo
+	 * @param featurename
+	 * @param version
+	 * @param check
+	 * @throws IOException
+	 */
+	void bootstrapFeatureVersion(VirtualHost vhost, String repo, String featurename, String version, boolean check)	throws IOException;
 }

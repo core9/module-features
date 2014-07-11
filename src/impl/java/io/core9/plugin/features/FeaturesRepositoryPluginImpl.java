@@ -287,7 +287,8 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 	 * @param vhost
 	 * @param repoID
 	 */
-	private void pullRepository(VirtualHost vhost, String repoID) {
+	@Override
+	public void pullRepository(VirtualHost vhost, String repoID) {
 		GitRepository repo = git.registerRepository(repoID);
 		if(!repo.exists()) {
 			FeatureRepository repoConf = featuresRepos.read(vhost, repoID);
@@ -306,7 +307,8 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 	 * @param virtualHost
 	 * @param repoID
 	 */
-	private void pushRepository(VirtualHost virtualHost, String repoID) {
+	@Override
+	public void pushRepository(VirtualHost virtualHost, String repoID) {
 		GitRepository repo = git.registerRepository(repoID);
 		git.push(repo);
 	}

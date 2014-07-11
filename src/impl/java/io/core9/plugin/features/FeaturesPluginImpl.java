@@ -107,6 +107,7 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 		bootstrapFeatureVersion(vhost, repo, featurename, version, true);
 	}
 	
+	@Override
 	public void bootstrapFeatureVersion(VirtualHost vhost, String repo, String featurename, String version, boolean check) throws IOException {
 		if(check) {
 			String current = getFeatureVersion(vhost, repo, featurename);
@@ -147,7 +148,8 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	 * @param featurename
 	 * @return
 	 */
-	private String getFeatureVersion(VirtualHost vhost, String repo, String featurename) {
+	@Override
+	public String getFeatureVersion(VirtualHost vhost, String repo, String featurename) {
 		FeatureRepository repoConfig = featuresRepos.read(vhost, repo);
 		Map<String,String> current = repoConfig.getCurrent();
 		if(current != null) {
