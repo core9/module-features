@@ -29,19 +29,14 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	
 	private CrudRepository<PublicFeatureRepository> publicRepo;
 	private CrudRepository<PrivateFeatureRepository> privateRepo;
-	
-	private VirtualHost[] vhosts;
+	private FeaturesProvider[] providers;
+	private List<VirtualHost> vhosts = new ArrayList<VirtualHost>();
 	
 	@InjectPlugin
 	private GitRepositoryManager git;
 	
 	@InjectPlugin
 	private FeaturesPlugin features;
-	
-	@Override
-	public void process(VirtualHost[] vhosts) {
-		this.vhosts = vhosts;
-	}
 	
 	@PluginLoaded
 	public void onRepositoryFactory(RepositoryFactory factory) throws NoCollectionNamePresentException {
@@ -64,10 +59,10 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	 * @param vhost
 	 * @param providers 
 	 */
-	private void handlePublicRepositories(VirtualHost vhost, List<FeaturesProvider> providers) {
+	private void handlePublicRepositories(VirtualHost vhost) {
 		List<PublicFeatureRepository> repoList = publicRepo.getAll(vhost);
 		Map<FeaturesProvider, String> providersToRepositories = new HashMap<FeaturesProvider, String>();
-		for(FeaturesProvider provider : providers) {
+		for(FeaturesProvider provider : this.providers) {
 			boolean available = false;
 			for(PublicFeatureRepository repoConf : repoList) {
 				available = repoConf.getPath().equals(provider.getRepositoryPath());
@@ -138,10 +133,28 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 				features.addFeatureProcessor((FeaturesProcessor) plugin);
 			}
 		}
-		for(VirtualHost vhost : vhosts) {
+		this.providers = providers.toArray(new FeaturesProvider[providers.size()]);
+		for(VirtualHost vhost : this.vhosts) {
 			handlePrivateRepositories(vhost);
-			handlePublicRepositories(vhost, providers);
+			handlePublicRepositories(vhost);
+		}
+		this.vhosts = null;
+	}
+
+	@Override
+	public void addVirtualHost(VirtualHost vhost) {
+		// Run featurerepo bootstrap if providers are available, else build cache to run on bootstrap (processPlugins())
+		if(this.providers != null) {
+			handlePrivateRepositories(vhost);
+			handlePublicRepositories(vhost);
+		} else {
+			vhosts.add(vhost);
 		}
 	}
-	
+
+	@Override
+	public void removeVirtualHost(VirtualHost vhost) {
+		//Do nothing
+		return;
+	}
 }
