@@ -212,6 +212,6 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 				}
 			}
 		}
-		setFeatureVersion(vhost, repo, featurename, null);
+		setFeatureVersion(vhost, repo, featurename, version);
 	}
 }
