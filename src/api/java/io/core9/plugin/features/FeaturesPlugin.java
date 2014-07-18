@@ -49,4 +49,13 @@ public interface FeaturesPlugin extends Core9Plugin, AdminPlugin {
 	 * @throws IOException
 	 */
 	void bootstrapFeatureVersion(VirtualHost vhost, String repo, String featurename, String version, boolean check)	throws IOException;
+
+	/**
+	 * Disable a feature
+	 * @param vhost
+	 * @param repo
+	 * @param featurename
+	 * @throws IOException
+	 */
+	void disableFeature(VirtualHost vhost, String repo, String featurename) throws IOException;
 }

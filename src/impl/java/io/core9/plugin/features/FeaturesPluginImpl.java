@@ -166,7 +166,8 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 	 * @param featurename
 	 * @throws IOException
 	 */
-	private void disableFeature(VirtualHost vhost, String repo, String featurename) throws IOException {
+	@Override
+	public void disableFeature(VirtualHost vhost, String repo, String featurename) throws IOException {
 		String currentVersion = getFeatureVersion(vhost, repo, featurename);
 		if(currentVersion == null) {
 			return;
