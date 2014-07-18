@@ -84,7 +84,6 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 					break;
 				case "disable":
 					disableFeature(request.getVirtualHost(), (String) body.get("repo"), (String) body.get("feature"));
-					setFeatureVersion(request.getVirtualHost(), (String) body.get("repo"), (String) body.get("feature"), null);
 					break;
 				default:
 					break;
@@ -116,7 +115,6 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 			}
 		}
 		applyFeature(vhost, repo, featurename, version);
-		setFeatureVersion(vhost, repo, featurename, version);
 	}
 
 	/**
@@ -185,6 +183,7 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 				}
 			}
 		}
+		setFeatureVersion(vhost, repo, featurename, null);
 	}
 	
 	
@@ -213,5 +212,6 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 				}
 			}
 		}
+		setFeatureVersion(vhost, repo, featurename, null);
 	}
 }
