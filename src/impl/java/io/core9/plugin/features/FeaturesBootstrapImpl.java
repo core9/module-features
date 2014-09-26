@@ -30,6 +30,7 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	private CrudRepository<PublicFeatureRepository> publicRepo;
 	private CrudRepository<PrivateFeatureRepository> privateRepo;
 	private FeaturesProvider[] providers;
+	private PrivateFeaturesProvider[] privateProviders;
 	private List<VirtualHost> vhosts = new ArrayList<VirtualHost>();
 	
 	@InjectPlugin
@@ -49,42 +50,66 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	 * @param vhost
 	 */
 	private void handlePrivateRepositories(VirtualHost vhost) {
+		List<PrivateFeatureRepository> repoList = privateRepo.getAll(vhost);
+		Map<String, String> pathsToRepositories = getPathsToRepositories(privateProviders, repoList);
+		Map<FeaturesProvider, String> providersToRepositories = new HashMap<FeaturesProvider, String>();
+		for(FeaturesProvider provider : this.privateProviders) {
+			PrivateFeaturesProvider privateProvider = (PrivateFeaturesProvider) provider;
+			if(pathsToRepositories.get(provider.getRepositoryPath()) == null) {
+				PrivateFeatureRepository newConf = new PrivateFeatureRepository();
+				newConf.setPath(provider.getRepositoryPath());
+				newConf.setUser(privateProvider.getUsername());
+				newConf.setPassword(privateProvider.getPassword());
+				privateRepo.create(vhost, newConf);
+				repoList.add(newConf);
+				pathsToRepositories.put(provider.getRepositoryPath(), newConf.getId());
+			}
+			providersToRepositories.put(provider, pathsToRepositories.get(provider.getRepositoryPath()));
+		}
 		for(PrivateFeatureRepository repo : privateRepo.getAll(vhost)) {
 			initializeRepository(repo);
 		}
+		handleFeatureProviders(vhost, providersToRepositories);
 	}
 	
 	/**
 	 * Create and initialize a public repository
 	 * @param vhost
-	 * @param providers 
 	 */
 	private void handlePublicRepositories(VirtualHost vhost) {
 		List<PublicFeatureRepository> repoList = publicRepo.getAll(vhost);
+		Map<String, String> pathsToRepositories = getPathsToRepositories(providers, repoList);
 		Map<FeaturesProvider, String> providersToRepositories = new HashMap<FeaturesProvider, String>();
 		for(FeaturesProvider provider : this.providers) {
-			boolean available = false;
-			for(PublicFeatureRepository repoConf : repoList) {
-				available = repoConf.getPath().equals(provider.getRepositoryPath());
-				if(available) {
-					providersToRepositories.put(provider, repoConf.getId());
-					break;
-				}
-			}
-			if(!available) {
+			if(pathsToRepositories.get(provider.getRepositoryPath()) == null) {
 				PublicFeatureRepository newConf = new PublicFeatureRepository();
 				newConf.setPath(provider.getRepositoryPath());
 				newConf.setUser(null);
 				newConf.setPassword(null);
 				publicRepo.create(vhost, newConf);
 				repoList.add(newConf);
-				providersToRepositories.put(provider, newConf.getId());
+				pathsToRepositories.put(provider.getRepositoryPath(), newConf.getId());
 			}
+			providersToRepositories.put(provider, pathsToRepositories.get(provider.getRepositoryPath()));
 		}
 		for(PublicFeatureRepository repoConf : repoList) {
 			initializeRepository(repoConf);
 		}
 		handleFeatureProviders(vhost, providersToRepositories);
+	}
+	
+	private Map<String, String> getPathsToRepositories(FeaturesProvider[] providers, List<? extends FeatureRepository> repos) {
+		Map<String, String> providersToRepositories = new HashMap<String, String>();
+		for(FeaturesProvider provider : providers) {
+			boolean available = false;
+			for(FeatureRepository repoConf : repos) {
+				available = repoConf.getPath().equals(provider.getRepositoryPath());
+				if(available) {
+					providersToRepositories.put(provider.getRepositoryPath(), repoConf.getId());
+				}
+			}
+		}
+		return providersToRepositories;
 	}
 	
 	/**
@@ -124,16 +149,22 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	@Override
 	public void processPlugins() {
 		List<FeaturesProvider> providers = new ArrayList<FeaturesProvider>();
+		List<PrivateFeaturesProvider> privateProviders = new ArrayList<PrivateFeaturesProvider>();
 		for(Plugin plugin: this.registry.getPlugins()) {
 			List<Class<?>> interfaces = ClassUtils.getAllInterfaces(plugin.getClass());
 			if (interfaces.contains(FeaturesProvider.class)) {
-				providers.add((FeaturesProvider) plugin);
+				if(interfaces.contains(PrivateFeaturesProvider.class)) {
+					privateProviders.add((PrivateFeaturesProvider) plugin);
+				} else {
+					providers.add((FeaturesProvider) plugin);
+				}
 			}
 			if (interfaces.contains(FeaturesProcessor.class)) {
 				features.addFeatureProcessor((FeaturesProcessor) plugin);
 			}
 		}
 		this.providers = providers.toArray(new FeaturesProvider[providers.size()]);
+		this.privateProviders = privateProviders.toArray(new PrivateFeaturesProvider[privateProviders.size()]);
 		for(VirtualHost vhost : this.vhosts) {
 			handlePrivateRepositories(vhost);
 			handlePublicRepositories(vhost);
@@ -144,7 +175,7 @@ public class FeaturesBootstrapImpl extends CoreBootStrategy implements FeaturesB
 	@Override
 	public void addVirtualHost(VirtualHost vhost) {
 		// Run featurerepo bootstrap if providers are available, else build cache to run on bootstrap (processPlugins())
-		if(this.providers != null) {
+		if(this.providers != null || this.privateProviders != null) {
 			handlePrivateRepositories(vhost);
 			handlePublicRepositories(vhost);
 		} else {
