@@ -45,7 +45,12 @@ public class FeaturesConfigProcessorImpl implements FeaturesConfigProcessor {
 	public void handleFeature(VirtualHost vhost, File repository, Map<String, Object> item) {
 		Map<String,Object> entry = (Map<String, Object>) item.get("entry");
 		if(entry != null) {
-			database.upsert(vhost.getContext("database"), vhost.getContext("prefix") + CONFIGURATION_COLLECTION, entry, entry);
+			Map<String,Object> query = entry;
+			if(entry.get("_id") != null) {
+				query = new HashMap<String, Object>();
+				query.put("_id", entry.get("_id"));
+			}
+			database.upsert(vhost.getContext("database"), vhost.getContext("prefix") + CONFIGURATION_COLLECTION, entry, query);
 		}
 	}
 

@@ -45,7 +45,14 @@ public class FeaturesContentProcessorImpl implements FeaturesContentProcessor {
 	public void handleFeature(VirtualHost vhost, File repository, Map<String, Object> feature) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entry = (Map<String, Object>) feature.get("entry");
-		database.upsert(vhost.getContext("database"), (String) vhost.getContext("prefix") + entry.get("contenttype"), entry, entry);
+		if(entry != null) {
+			Map<String,Object> query = entry;
+			if(entry.get("_id") != null) {
+				query = new HashMap<String, Object>();
+				query.put("_id", entry.get("_id"));
+			}
+			database.upsert(vhost.getContext("database"), (String) vhost.getContext("prefix") + entry.get("contenttype"), entry, query);
+		}
 	}
 
 	@Override
