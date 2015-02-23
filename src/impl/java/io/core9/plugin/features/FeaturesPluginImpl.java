@@ -57,7 +57,7 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 
 	@Override
 	protected void process(Request request) {
-		if(request.getParams().containsKey("getTypes")) {
+		if(request.getQueryParams().containsKey("getTypes")) {
 			Map<String,Object> result = new HashMap<String,Object>();
 			for(FeaturesProcessor processor : processors.values()) {
 				result.put(processor.getFeatureNamespace(), processor.getProcessorAdminTemplateName());
@@ -136,7 +136,7 @@ public class FeaturesPluginImpl extends AbstractAdminPlugin implements FeaturesP
 		} else {
 			current.remove(featurename);
 		}
-		featuresRepos.update(virtualHost, repo, repoConfig);
+		featuresRepos.update(virtualHost, repoConfig);
 	}
 	
 	/**

@@ -60,9 +60,9 @@ public class FeaturesRepositoryPluginImpl extends AbstractAdminPlugin implements
 		try {
 			switch(request.getMethod()) {
 			case POST:
-				if(request.getParams().containsKey("pull")) {
+				if(request.getQueryParams().containsKey("pull")) {
 					pullRepository(request.getVirtualHost(), repoID);
-				} else if(request.getParams().containsKey("push")) {
+				} else if(request.getQueryParams().containsKey("push")) {
 					pushRepository(request.getVirtualHost(), repoID);
 				}
 			default:
