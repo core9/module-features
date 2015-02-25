@@ -23,9 +23,7 @@ dependencies {
 	apiCompile 'io.core9:core-api:+'
 	apiCompile 'io.core9:module-admin-api:+'
 	apiCompile 'io.core9:module-database-api:+'
-	apiCompile 'io.core9:module-database-mongodb-api:+'
 	apiCompile 'io.core9:module-server-api:+'
 	implCompile 'io.core9:module-git-api:+'
-	implCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.1'
-	
+	implCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.1'	
 }
